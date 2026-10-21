@@ -1,45 +1,45 @@
 # Debugging Log — 7 Steps Applied
 
-Fill in one section per bug. Take a screenshot at the marked steps and save it in `screenshots/`.
+This log documents three bugs using the seven-step debugging process. Each bug was reproduced with an automated test, investigated using the VS Code debugger, corrected, and verified with the complete test suite.
 
 ---
 
-## Bug #1: <short title>
+## Bug #1: Invalid hex characters produced an unclear error
 
-| Step | What I did |
-|---|---|
-| 1. Identify / reproduce | Which test failed? Paste the error. 📸 *screenshot: failing test output* |
-| 2. Gather information | What were the actual vs. expected values? |
-| 3. Form a hypothesis | What did I think was wrong? |
-| 4. Isolate / locate | Breakpoint location + variable values. 📸 *screenshot: VS Code debugger paused, Variables panel* |
-| 5. Fix | What I changed (commit hash: `______`). 📸 *screenshot: diff* |
-| 6. Verify | Tests that now pass. 📸 *screenshot: green pytest run* |
-| 7. Reflect / prevent | What I learned; how I'd avoid it next time. |
-
----
-
-## Bug #2: <short title>
-
-| Step | What I did |
-|---|---|
-| 1. Identify / reproduce | |
-| 2. Gather information | |
-| 3. Form a hypothesis | |
-| 4. Isolate / locate | |
-| 5. Fix | |
-| 6. Verify | |
-| 7. Reflect / prevent | |
+| Step                    | What I did                                                                                                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Identify / reproduce | I added a test using `hex_to_rgb("#GGG")` and expected a clear `ValueError` containing `"Invalid hex color"`. The test failed because Python instead returned `"invalid literal for int() with base 16: 'GG'"`. Screenshot: `screenshots/bug1_failure.png`                                               |
+| 2. Gather information   | The function correctly handled valid full, shorthand, lowercase, and no-hash hex colors, but it did not explicitly validate invalid hexadecimal characters. For `"#GGG"`, the expected error was `"Invalid hex color"`, while the actual error came directly from Python's `int()` conversion.           |
+| 3. Form a hypothesis    | I suspected that `hex_to_rgb()` was passing invalid characters directly to `int(..., 16)` without validating them first. I expected the shorthand expansion to turn `"GGG"` into `"GGGGGG"` before the conversion failed.                                                                                |
+| 4. Isolate / locate     | I placed a breakpoint on `r = int(hex_color[0:2], 16)` and debugged only `test_invalid_hex_characters`. The debugger showed `hex_color = "GGGGGG"` immediately before the conversion, confirming that invalid characters reached `int()` without validation. Screenshot: `screenshots/bug1_debugger.png` |
+| 5. Fix                  | I added validation before the RGB conversions. The function now checks that the expanded color has exactly six characters and that every character is a valid hexadecimal digit. If not, it raises `ValueError("Invalid hex color")`. Commit: `520c05f`. Screenshot: `screenshots/bug1_diff.png`         |
+| 6. Verify               | I reran the complete pytest suite. The new invalid-character test passed and all existing tests continued to pass, resulting in **18 passed**. Screenshot: `screenshots/bug1_passing.png`                                                                                                                |
+| 7. Reflect / prevent    | I learned that relying on a lower-level exception can technically detect bad input but still produce an unclear interface for the user. In the future, I would validate external input before parsing it and add invalid-input tests alongside normal cases.                                             |
 
 ---
 
-## Bug #3: <short title>
+## Bug #2: Incorrect WCAG AAA threshold for normal text
 
-| Step | What I did |
-|---|---|
-| 1. Identify / reproduce | |
-| 2. Gather information | |
-| 3. Form a hypothesis | |
-| 4. Isolate / locate | |
-| 5. Fix | |
-| 6. Verify | |
-| 7. Reflect / prevent | |
+| Step                    | What I did                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Identify / reproduce | I extended the checker with WCAG AAA support and added an automated test for normal text. `passes_aaa("#666666", "#FFFFFF")` returned `True`, but the expected result was `False`. The test failed with `AssertionError: assert True is False`. Screenshot: `screenshots/bug2_failure.png`                                                                                        |
+| 2. Gather information   | The contrast ratio for `#666666` against `#FFFFFF` was approximately `5.74:1`. The function received `large_text=False`, meaning the normal-text AAA threshold should be 7.0:1. However, the function was using 4.5 as its threshold.                                                                                                                                             |
+| 3. Form a hypothesis    | I suspected that `passes_aaa()` was applying the large-text AAA threshold of 4.5 to all text instead of choosing between 7.0 for normal text and 4.5 for large text.                                                                                                                                                                                                              |
+| 4. Isolate / locate     | I placed a breakpoint on `threshold = 4.5` inside `passes_aaa()` and debugged only `test_aaa_normal_text_threshold`. The Variables panel showed `large_text = False` and `ratio = 5.741836...` while execution was using the 4.5 threshold. This confirmed that the threshold-selection logic was the source of the incorrect result. Screenshot: `screenshots/bug2_debugger.png` |
+| 5. Fix                  | I changed `passes_aaa()` to select a threshold of 4.5 when `large_text=True` and 7.0 otherwise. Commit: `e785f26`. Screenshot: `screenshots/bug2_diff.png`                                                                                                                                                                                                                        |
+| 6. Verify               | I reran the complete test suite. The AAA threshold test passed and all previous tests remained green, resulting in **19 passed**. Screenshot: `screenshots/bug2_passing.png`                                                                                                                                                                                                      |
+| 7. Reflect / prevent    | I learned that similar accessibility standards can use different thresholds depending on context, so hard-coding one value can create subtle logic errors. In the future, I would create boundary tests for each mode or threshold instead of assuming one test covers every branch.                                                                                              |
+
+---
+
+## Bug #3: RGB color strings were rejected as invalid hex colors
+
+| Step                    | What I did                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Identify / reproduce | I added a test using `hex_to_rgb("rgb(255, 0, 0)")` and expected `(255, 0, 0)`. Instead, the function raised `ValueError("Invalid hex color")`. Screenshot: `screenshots/bug3_failure.png`                                                                                                                                                                       |
+| 2. Gather information   | The existing `hex_to_rgb()` function supported hexadecimal input but did not recognize CSS-style `rgb(...)` strings. The RGB string reached the hexadecimal validation logic unchanged, where its length and non-hexadecimal characters caused it to be rejected.                                                                                                |
+| 3. Form a hypothesis    | I suspected that the function assumed every input was hexadecimal before determining its format. I expected `"rgb(255, 0, 0)"` to reach the hex-only validation unchanged and fail there.                                                                                                                                                                        |
+| 4. Isolate / locate     | I placed a breakpoint on the hexadecimal validation condition and debugged only `test_rgb_string_input`. The Variables panel showed `hex_color = "rgb(255, 0, 0)"` immediately before the hex-only validation. This confirmed that RGB input needed to be detected and parsed before the existing hexadecimal logic. Screenshot: `screenshots/bug3_debugger.png` |
+| 5. Fix                  | I added RGB-string detection before hexadecimal parsing. The function now extracts the three channel values, converts them to integers, verifies that each value is between 0 and 255, and returns the RGB tuple. Invalid RGB strings raise a clear `ValueError`. Commit: `f86b9f5`. Screenshot: `screenshots/bug3_diff.png`                                     |
+| 6. Verify               | I reran the complete pytest suite. The new RGB-input test passed without breaking any previous functionality, resulting in **20 passed**. Screenshot: `screenshots/bug3_passing.png`                                                                                                                                                                             |
+| 7. Reflect / prevent    | I learned that validation should happen after identifying the input format. Applying hexadecimal-specific validation to every input prevented the function from supporting another valid color representation. In the future, I would identify the format first and then apply format-specific parsing and validation.                                           |
