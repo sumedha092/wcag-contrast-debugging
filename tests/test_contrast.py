@@ -61,3 +61,8 @@ def test_aa_large_text_pass():
 def test_aa_large_text_red():
     assert passes_aa("#FF0000", "#FFFFFF", large_text=True) is True   # 4.0
     assert passes_aa("#FF0000", "#FFFFFF") is False
+
+# ---------- input validation ----------
+def test_invalid_hex_characters():
+    with pytest.raises(ValueError, match="Invalid hex color"):
+        hex_to_rgb("#GGG")
