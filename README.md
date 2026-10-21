@@ -65,9 +65,9 @@ Final result:
 
 | Bug                        | Symptom                                                                                           | Root cause                                                               | Fix commit |
 | -------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------- |
-| 1. Invalid hex characters  | `#GGG` produced Python's low-level `int()` conversion error instead of a clear validation message | Hex characters were passed to `int(..., 16)` without explicit validation | `520c05f`  |
-| 2. Incorrect AAA threshold | Normal text with a 5.74:1 ratio incorrectly passed AAA                                            | `passes_aaa()` used the 4.5 large-text threshold for normal text         | `e785f26`  |
-| 3. RGB strings rejected    | `rgb(255, 0, 0)` raised `ValueError("Invalid hex color")`                                         | Every input was treated as hexadecimal before its format was identified  | `f86b9f5`  |
+| 1. Invalid hex characters  | `#GGG` produced Python's low-level `int()` conversion error instead of a clear validation message | Hex characters were passed to `int(..., 16)` without explicit validation | `f5e3c4d`  |
+| 2. Incorrect AAA threshold | Normal text with a 5.74:1 ratio incorrectly passed AAA                                            | `passes_aaa()` used the 4.5 large-text threshold for normal text         | `e4fbef5`  |
+| 3. RGB strings rejected    | `rgb(255, 0, 0)` raised `ValueError("Invalid hex color")`                                         | Every input was treated as hexadecimal before its format was identified  | `5046c26`  |
 
 See [DEBUG_LOG.md](DEBUG_LOG.md) for the complete seven-step debugging process, breakpoint observations, fixes, verification results, and reflections for each bug.
 
