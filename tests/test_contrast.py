@@ -1,7 +1,6 @@
 """Expected values verified against the WCAG 2.1 formula."""
 import pytest
-from contrast import hex_to_rgb, relative_luminance, contrast_ratio, passes_aa
-
+from contrast import hex_to_rgb, relative_luminance, contrast_ratio, passes_aa, passes_aaa
 
 # ---------- hex_to_rgb ----------
 def test_hex_full():
@@ -66,3 +65,6 @@ def test_aa_large_text_red():
 def test_invalid_hex_characters():
     with pytest.raises(ValueError, match="Invalid hex color"):
         hex_to_rgb("#GGG")
+
+def test_aaa_normal_text_threshold():
+    assert passes_aaa("#666666", "#FFFFFF") is False

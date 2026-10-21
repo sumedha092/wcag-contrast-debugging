@@ -84,6 +84,16 @@ def passes_aa(color1: str, color2: str, large_text: bool = False) -> bool:
 
     return ratio >= threshold
 
+def passes_aaa(color1: str, color2: str, large_text: bool = False) -> bool:
+    """WCAG AAA: normal text needs >= 7.0:1, large text needs >= 4.5:1."""
+    ratio = contrast_ratio(color1, color2)
+
+    if large_text:
+        threshold = 4.5
+    else:
+        threshold = 7.0
+
+    return ratio >= threshold
 
 if __name__ == "__main__":
     # Simple command-line demo
