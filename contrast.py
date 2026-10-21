@@ -10,12 +10,27 @@ Run the tests with:   python -m pytest -v
 """
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
-    """Convert '#RRGGBB', 'RRGGBB', or shorthand '#RGB' to an (r, g, b) tuple of 0-255 ints.
+    """Convert '#RRGGBB', 'RRGGBB', or shorthand '#RGB' to an (r, g, b) tuple of 0-255 ints."""
 
-    Example: hex_to_rgb('#FF8000') -> (255, 128, 0)
-             hex_to_rgb('#fff')    -> (255, 255, 255)
-    """
+    if hex_color.startswith("rgb(") and hex_color.endswith(")"):
+        values = hex_color[4:-1].split(",")
+
+        if len(values) != 3:
+            raise ValueError("Invalid RGB color")
+
+        try:
+            r, g, b = (int(value.strip()) for value in values)
+        except ValueError:
+            raise ValueError("Invalid RGB color")
+
+        if not all(0 <= value <= 255 for value in (r, g, b)):
+            raise ValueError("Invalid RGB color")
+
+        return (r, g, b)
+
     hex_color = hex_color.lstrip("#")
+
+    # rest of your existing code...
 
     if len(hex_color) == 3:
         hex_color = "".join(c * 2 for c in hex_color)

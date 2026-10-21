@@ -68,3 +68,6 @@ def test_invalid_hex_characters():
 
 def test_aaa_normal_text_threshold():
     assert passes_aaa("#666666", "#FFFFFF") is False
+
+def test_rgb_string_input():
+    assert hex_to_rgb("rgb(255, 0, 0)") == (255, 0, 0)
